@@ -53,14 +53,9 @@ class StreamClient {
   /// });
   /// ```
   Future<StreamManifest> getManifest(dynamic videoId,
-      {@Deprecated(
-          'Use the ytClient parameter instead passing the proper [YoutubeApiClient]s')
-      bool fullManifest = false,
-      List<YoutubeApiClient>? ytClients,
-      bool requireWatchPage = true}) async {
+      {@Deprecated('Use the ytClient parameter instead passing the proper [YoutubeApiClient]s') bool fullManifest = false, List<YoutubeApiClient>? ytClients, bool requireWatchPage = true}) async {
     videoId = VideoId.fromString(videoId);
-    final clients =
-        ytClients ?? [YoutubeApiClient.android, YoutubeApiClient.ios];
+    final clients = ytClients ?? [YoutubeApiClient.android, YoutubeApiClient.ios];
 
     final uniqueStreams = LinkedHashSet<StreamInfo>(
       equals: (a, b) {
@@ -81,13 +76,10 @@ class StreamClient {
     Object? lastException;
 
     for (final client in clients) {
-      _logger.fine(
-          'Getting stream manifest for video $videoId with client: ${client.payload['context']['client']['clientName']}');
+      _logger.fine('Getting stream manifest for video $videoId with client: ${client.payload['context']['client']['clientName']}');
       try {
         await retry(_httpClient, () async {
-          final streams = await _getStreams(videoId,
-                  ytClient: client, requireWatchPage: requireWatchPage)
-              .toList();
+          final streams = await _getStreams(videoId, ytClient: client, requireWatchPage: requireWatchPage).toList();
           if (streams.isEmpty) {
             throw VideoUnavailableException(
               'Video "$videoId" does not contain any playable streams.',
@@ -103,10 +95,7 @@ class StreamClient {
           uniqueStreams.addAll(streams);
         });
       } catch (e, s) {
-        _logger.severe(
-            'Failed to get stream manifest for video $videoId with client: ${client.payload['context']['client']['clientName']}. Reason: $e\n',
-            e,
-            s);
+        _logger.severe('Failed to get stream manifest for video $videoId with client: ${client.payload['context']['client']['clientName']}. Reason: $e\n', e, s);
         lastException = e;
       }
     }
@@ -117,12 +106,9 @@ class StreamClient {
     }
     if (uniqueStreams.isEmpty) {
       if (lastException is Error && lastException.stackTrace != null) {
-        throw Error.throwWithStackTrace(
-            lastException, lastException.stackTrace!);
+        throw Error.throwWithStackTrace(lastException, lastException.stackTrace!);
       }
-      throw lastException ??
-          VideoUnavailableException(
-              'Video "$videoId" has no available streams');
+      throw lastException ?? VideoUnavailableException('Video "$videoId" has no available streams');
     }
     return StreamManifest(uniqueStreams.toList());
   }
@@ -157,32 +143,24 @@ class StreamClient {
   /// Gets the actual stream which is identified by the specified metadata.
   /// Usually this downloads the bytes of the stream.
   /// For HLS streams all the fragments are concatenated into a single stream.
-  Stream<List<int>> get(StreamInfo streamInfo) =>
-      _httpClient.getStream(streamInfo, streamClient: this);
+  Stream<List<int>> get(StreamInfo streamInfo) => _httpClient.getStream(streamInfo, streamClient: this);
 
-  Stream<StreamInfo> _getStreams(VideoId videoId,
-      {required YoutubeApiClient ytClient,
-      required bool requireWatchPage}) async* {
+  Stream<StreamInfo> _getStreams(VideoId videoId, {required YoutubeApiClient ytClient, required bool requireWatchPage}) async* {
     // Use await for instead of yield* to catch exceptions
-    await for (final stream
-        in _getStream(videoId, ytClient, requireWatchPage)) {
+    await for (final stream in _getStream(videoId, ytClient, requireWatchPage)) {
       yield stream;
     }
   }
 
-  Stream<StreamInfo> _getStream(VideoId videoId, YoutubeApiClient ytClient,
-      bool requireWatchPage) async* {
-    final watchPage = requireWatchPage
-        ? await WatchPage.get(_httpClient, videoId.value)
-        : null;
+  Stream<StreamInfo> _getStream(VideoId videoId, YoutubeApiClient ytClient, bool requireWatchPage) async* {
+    final watchPage = requireWatchPage ? await WatchPage.get(_httpClient, videoId.value) : null;
 
-    final playerResponse = await _controller
-        .getPlayerResponse(videoId, ytClient, watchPage: watchPage);
+    final playerResponse = await _controller.getPlayerResponse(videoId, ytClient, watchPage: watchPage);
 
     if (!playerResponse.previewVideoId.isNullOrWhiteSpace) {
       throw VideoRequiresPurchaseException.preview(
         videoId,
-        VideoId(playerResponse.previewVideoId!),
+        VideoId(playerResponse.previewVideoId ?? ''),
       );
     }
 
@@ -196,20 +174,15 @@ class StreamClient {
         reason: playerResponse.videoPlayabilityError ?? '',
       );
     }
-    yield* _parseStreamInfo(playerResponse.streams,
-        watchPage: watchPage, videoId: videoId);
+    yield* _parseStreamInfo(playerResponse.streams, watchPage: watchPage, videoId: videoId);
 
     if (!playerResponse.dashManifestUrl.isNullOrWhiteSpace) {
-      final dashManifest =
-          await _controller.getDashManifest(playerResponse.dashManifestUrl!);
-      yield* _parseStreamInfo(dashManifest.streams,
-          watchPage: watchPage, videoId: videoId);
+      final dashManifest = await _controller.getDashManifest(playerResponse.dashManifestUrl ?? '');
+      yield* _parseStreamInfo(dashManifest.streams, watchPage: watchPage, videoId: videoId);
     }
     if (!playerResponse.hlsManifestUrl.isNullOrWhiteSpace) {
-      final hlsManifest =
-          await _controller.getHlsManifest(playerResponse.hlsManifestUrl!);
-      yield* _parseStreamInfo(hlsManifest.streams,
-          watchPage: watchPage, videoId: videoId);
+      final hlsManifest = await _controller.getHlsManifest(playerResponse.hlsManifestUrl ?? '');
+      yield* _parseStreamInfo(hlsManifest.streams, watchPage: watchPage, videoId: videoId);
     }
   }
 
@@ -248,10 +221,7 @@ class StreamClient {
     final playerScript = await _getPlayerScript(watchPage);
 
     final funcMatch = _matchPatterns(playerScript, [
-      (
-        r'function\(\w+\)\{[^}]*\.slice\(0,0\).*?return\s?\w+?\.join\(""\)};',
-        0
-      ),
+      (r'function\(\w+\)\{[^}]*\.slice\(0,0\).*?return\s?\w+?\.join\(""\)};', 0),
       (
         r'function\s*\(\s*(?:[a-zA-Z0-9_$]+)\s*\)\s*\{(?:(?!function\s*\(\s*(?:[a-zA-Z0-9_$]+)\s*\)\s*\{)[\s\S])*?var\s+([a-zA-Z0-9_$]+)\s*=\s*(?:[a-zA-Z0-9_$]+)\[([a-zA-Z0-9_$]+)\[\d+\]\][\s\S]*?return\s+\1\[\2\[\d+\]\]\(\2\[\d+\]\)\s*?\};',
         0
@@ -259,8 +229,7 @@ class StreamClient {
     ]);
 
     if (funcMatch == null) {
-      _logger.warning(
-          'Could not find the decipher function in the player script.');
+      _logger.warning('Could not find the decipher function in the player script.');
       return null;
     }
 
@@ -277,10 +246,8 @@ class StreamClient {
 
   final _nSigCache = <String, String>{};
 
-  Stream<StreamInfo> _parseStreamInfo(Iterable<StreamInfoProvider> streams,
-      {WatchPage? watchPage, VideoId? videoId}) async* {
-    assert(watchPage != null || videoId != null,
-        'Either watchPage or videoId must be provided');
+  Stream<StreamInfo> _parseStreamInfo(Iterable<StreamInfoProvider> streams, {WatchPage? watchPage, VideoId? videoId}) async* {
+    assert(watchPage != null || videoId != null, 'Either watchPage or videoId must be provided');
     String? funcCode;
     CipherManifest? cipherManifest;
 
@@ -293,17 +260,15 @@ class StreamClient {
         continue;
       }
       if (url.queryParameters.containsKey('n')) {
-        final nParam = url.queryParameters['n']!;
+        final nParam = url.queryParameters['n'] ?? '';
         String? deciphered;
         if (_nSigCache.containsKey(nParam)) {
-          deciphered = _nSigCache[nParam]!;
+          deciphered = _nSigCache[nParam] ?? '';
         } else {
-          funcCode ??= await _getDecipherFunction(
-              watchPage ??= await WatchPage.get(_httpClient, videoId!.value));
+          funcCode ??= await _getDecipherFunction(watchPage ??= await WatchPage.get(_httpClient, videoId!.value));
           if (funcCode != null) {
             deciphered = _nSigCache[nParam] = JSEngine.run(funcCode, [nParam]);
-            _logger.fine(
-                'Deciphered n-sig: ${url.queryParameters['n']} -> $deciphered');
+            _logger.fine('Deciphered n-sig: ${url.queryParameters['n']} -> $deciphered');
           }
         }
         if (deciphered == null) {
@@ -324,8 +289,7 @@ class StreamClient {
         } else {
           final globalVar = _getGlobalVar(playerScript);
 
-          final deciphererFunc =
-              getDecipherSignatureFunc(globalVar, playerScript);
+          final deciphererFunc = getDecipherSignatureFunc(globalVar, playerScript);
           final deciphered = deciphererFunc?.call(sig);
           if (deciphered != null) {
             url = url.setQueryParam(sigParam, deciphered);
@@ -338,17 +302,15 @@ class StreamClient {
         }
       }
 
-      final contentLength = stream.contentLength ??
-          (await _httpClient.getContentLength(url, validate: false)) ??
-          0;
+      final contentLength = stream.contentLength ?? (await _httpClient.getContentLength(url, validate: false)) ?? 0;
 
-      if (contentLength <= 0) {
-        continue;
-      }
+      // if (contentLength <= 0) {
+      //   continue;
+      // }
 
-      final container = StreamContainer.parse(stream.container!);
+      final container = StreamContainer.parse(stream.container ?? '');
       final fileSize = FileSize(contentLength);
-      final bitrate = Bitrate(stream.bitrate!);
+      final bitrate = Bitrate(stream.bitrate ?? 0);
 
       final audioCodec = stream.audioCodec;
       final videoCodec = stream.videoCodec;
@@ -375,9 +337,7 @@ class StreamClient {
         final videoQuality = VideoQualityUtil.fromLabel(stream.qualityLabel);
         final videoWidth = stream.videoWidth;
         final videoHeight = stream.videoHeight;
-        final videoResolution = videoWidth != null && videoHeight != null
-            ? VideoResolution(videoWidth, videoHeight)
-            : videoQuality.toVideoResolution();
+        final videoResolution = videoWidth != null && videoHeight != null ? VideoResolution(videoWidth, videoHeight) : videoQuality.toVideoResolution();
 
         if (stream.videoOnly) {
           yield HlsVideoStreamInfo(
@@ -423,13 +383,10 @@ class StreamClient {
 
         final videoWidth = stream.videoWidth;
         final videoHeight = stream.videoHeight;
-        final videoResolution = videoWidth != null && videoHeight != null
-            ? VideoResolution(videoWidth, videoHeight)
-            : videoQuality.toVideoResolution();
+        final videoResolution = videoWidth != null && videoHeight != null ? VideoResolution(videoWidth, videoHeight) : videoQuality.toVideoResolution();
 
         // Muxed
-        if (!audioCodec.isNullOrWhiteSpace &&
-            stream.source != StreamSource.adaptive) {
+        if (!audioCodec.isNullOrWhiteSpace && stream.source != StreamSource.adaptive) {
           assert(stream.audioTrack == null);
           yield MuxedStreamInfo(
             videoId ?? watchPage!.videoId,
@@ -469,17 +426,7 @@ class StreamClient {
         // Audio-only
       } else if (!audioCodec.isNullOrWhiteSpace) {
         yield AudioOnlyStreamInfo(
-            videoId ?? watchPage!.videoId,
-            itag,
-            url,
-            container,
-            fileSize,
-            bitrate,
-            audioCodec!,
-            stream.qualityLabel!,
-            stream.fragments ?? const [],
-            stream.codec,
-            stream.audioTrack);
+            videoId ?? watchPage!.videoId, itag, url, container, fileSize, bitrate, audioCodec!, stream.qualityLabel!, stream.fragments ?? const [], stream.codec, stream.audioTrack);
       } else {
         throw YoutubeExplodeException('Could not extract stream codec');
       }

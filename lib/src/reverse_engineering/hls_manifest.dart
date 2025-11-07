@@ -31,11 +31,10 @@ class HlsManifest {
     for (var i = idx + 1; i < lines.length; i += 1) {
       final line = lines[i];
       final params = {
-        for (final match in expr.allMatches(line, line.indexOf(':') + 1))
-          match.group(1)!: match.group(2)!,
+        for (final match in expr.allMatches(line, line.indexOf(':') + 1)) match.group(1) ?? '': match.group(2) ?? '',
       };
       if (line.startsWith('#EXT-X-MEDIA:')) {
-        final url = params['URI']!;
+        final url = params['URI'] ?? '';
         // Trim the quotes
         videos.add((url: url.substring(1, url.length - 1), params: params));
         continue;
@@ -89,17 +88,14 @@ class HlsManifest {
       int? audioClen;
       int? videoClen;
       if (sgoap != null) {
-        audioClen =
-            int.parse(RegExp(r'clen=(\d+)').firstMatch(sgoap)!.group(1)!);
+        audioClen = int.parse(RegExp(r'clen=(\d+)').firstMatch(sgoap)?.group(1) ?? '0');
         if (bandwidth == null) {
-          final dur = double.parse(
-              RegExp(r'dur=(\d+\.\d+)').firstMatch(sgoap)!.group(1)!);
+          final dur = double.parse(RegExp(r'dur=(\d+\.\d+)').firstMatch(sgoap)?.group(1) ?? '0');
           bandwidth = (audioClen / dur).round() * 8;
         }
       }
       if (sgovp != null) {
-        videoClen =
-            int.parse(RegExp(r'clen=(\d+)').firstMatch(sgovp)!.group(1)!);
+        videoClen = int.parse(RegExp(r'clen=(\d+)').firstMatch(sgovp)?.group(1) ?? '0');
       }
 
       streams.add(
@@ -137,12 +133,10 @@ class HlsManifest {
       if (lines[i] == '#EXT-X-ENDLIST') {
         break;
       }
-      if (lines[i].startsWith('#EXT-X-MAP') ||
-          lines[i].startsWith('#EXT-X-TARGETDURATION')) {
+      if (lines[i].startsWith('#EXT-X-MAP') || lines[i].startsWith('#EXT-X-TARGETDURATION')) {
         continue;
       }
-      final duration = double.parse(
-          lines[i].substring('#EXTINF:'.length, lines[i].length - 1));
+      final duration = double.parse(lines[i].substring('#EXTINF:'.length, lines[i].length - 1));
       final url = lines[i + 1];
       segments.add((url: url, duration: duration));
       i++;

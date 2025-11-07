@@ -14,8 +14,7 @@ class VideoResolution implements Comparable<VideoResolution> {
   /// Initializes an instance of [VideoResolution]
   const VideoResolution(this.width, this.height);
 
-  factory VideoResolution.fromJson(Map<String, dynamic> json) =>
-      _$VideoResolutionFromJson(json);
+  factory VideoResolution.fromJson(Map<String, dynamic> json) => _$VideoResolutionFromJson(json);
 
   Map<String, dynamic> toJson() => _$VideoResolutionToJson(this);
 
@@ -46,19 +45,19 @@ class VideoResolution implements Comparable<VideoResolution> {
     return false;
   }
 
-  operator >(VideoResolution other) {
+  bool operator >(VideoResolution other) {
     return compareTo(other) > 0;
   }
 
-  operator <(VideoResolution other) {
+  bool operator <(VideoResolution other) {
     return compareTo(other) < 0;
   }
 
-  operator >=(VideoResolution other) {
+  bool operator >=(VideoResolution other) {
     return compareTo(other) >= 0;
   }
 
-  operator <=(VideoResolution other) {
+  bool operator <=(VideoResolution other) {
     return compareTo(other) <= 0;
   }
 

@@ -11,8 +11,8 @@ abstract class VideoId with _$VideoId {
   static final _regMatchExp = RegExp(r'youtube\..+?/watch.*?v=(.*?)(?:&|/|$)');
   static final _shortMatchExp = RegExp(r'youtu\.be/(.*?)(?:\?|&|/|$)');
   static final _embedMatchExp = RegExp(r'youtube\..+?/embed/(.*?)(?:\?|&|/|$)');
-  static final _shortsMatchExp =
-      RegExp(r'youtube\..+/shorts/([A-Za-z0-9-_]+$)');
+  static final _shortsMatchExp = RegExp(r'youtube\..+/shorts/([A-Za-z0-9-_]+$)');
+  static final _liveMatchExp = RegExp(r'youtube\..+/live/([A-Za-z0-9-_]+$)');
 
   /// Initializes an instance of [VideoId] with a url or video id.
   factory VideoId(String idOrUrl) {
@@ -44,8 +44,7 @@ abstract class VideoId with _$VideoId {
     return VideoId(obj.toString());
   }
 
-  factory VideoId.fromJson(Map<String, dynamic> json) =>
-      _$VideoIdFromJson(json);
+  factory VideoId.fromJson(Map<String, dynamic> json) => _$VideoIdFromJson(json);
 
   @override
   String toString() => value;
@@ -97,6 +96,12 @@ abstract class VideoId with _$VideoId {
     if (!shortsMatch.isNullOrWhiteSpace && validateVideoId(shortsMatch!)) {
       return shortsMatch;
     }
+    // https://www.youtube.com/live/hwG3bvxkSJQ
+    final liveMatch = _liveMatchExp.firstMatch(url)?.group(1);
+    if (!liveMatch.isNullOrWhiteSpace && validateVideoId(liveMatch!)) {
+      return liveMatch;
+    }
+
     return null;
   }
 }
