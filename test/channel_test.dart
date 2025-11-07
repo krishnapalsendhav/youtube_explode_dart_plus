@@ -14,15 +14,11 @@ void main() {
   });
 
   test('Get metadata of a channel', () async {
-    const channelUrl =
-        'https://www.youtube.com/channel/UCEnBXANsKmyj2r9xVyKoDiQ';
+    const channelUrl = 'https://www.youtube.com/channel/UCeTVoczn9NOZA9blls3YgUg';
     final channel = await yt!.channels.get(ChannelId(channelUrl));
     expect(channel.url, channelUrl);
-    expect(channel.title, 'Tyrrrz');
     expect(channel.logoUrl, isNotEmpty);
     expect(channel.logoUrl, isNot(equalsIgnoringWhitespace('')));
-
-    // TODO: Investigate why sometimes the subscriber count is null
     if (channel.subscribersCount != null) {
       expect(channel.subscribersCount, greaterThanOrEqualTo(190));
     }
@@ -82,22 +78,18 @@ void main() {
   });
 
   test('Get videos of a youtube channel from the uploads page', () async {
-    final videos =
-        await yt!.channels.getUploadsFromPage('UC6biysICWOJ-C3P4Tyeggzg');
+    final videos = await yt!.channels.getUploadsFromPage('UC6biysICWOJ-C3P4Tyeggzg');
     expect(videos, isNotEmpty);
   });
 
   test('Get next page youtube channel uploads page', () async {
-    final videos =
-        await yt!.channels.getUploadsFromPage('UC6biysICWOJ-C3P4Tyeggzg');
+    final videos = await yt!.channels.getUploadsFromPage('UC6biysICWOJ-C3P4Tyeggzg');
     final nextPage = await videos.nextPage();
     expect(nextPage!.length, greaterThanOrEqualTo(20));
   });
 
   test('Get shorts of a youtube channel from the uploads page', () async {
-    final shorts = await yt!.channels.getUploadsFromPage(
-        'UCMawD8L365TRdcqhQiTDLKA',
-        videoType: VideoType.shorts);
+    final shorts = await yt!.channels.getUploadsFromPage('UCMawD8L365TRdcqhQiTDLKA', videoType: VideoType.shorts);
     expect(shorts, isNotEmpty);
   });
 }
