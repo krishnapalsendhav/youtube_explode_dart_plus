@@ -20,8 +20,13 @@ void main() {
         YoutubeApiClient.mweb,
         YoutubeApiClient.safari,
         YoutubeApiClient.mediaConnect,
+        YoutubeApiClient.android,
       ],
     );
+    final hlsStreams = manifest.hls;
+    for (var stream in hlsStreams) {
+      print('HLS Stream: ${stream.tag} - ${stream.url}');
+    }
     expect(manifest.streams.length, greaterThan(0));
     expect(manifest.hls.length, greaterThan(0));
   });
