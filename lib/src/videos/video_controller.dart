@@ -48,7 +48,6 @@ class VideoController {
         ...client.headers,
       },
     );
-    print(content);
     return PlayerResponse.parse(content);
   }
 
